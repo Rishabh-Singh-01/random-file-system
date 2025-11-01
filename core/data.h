@@ -2,6 +2,7 @@
 #define DATA_H
 
 #include "disk.h"
+#include "inode.h"
 #include <stdint.h>
 #define DATA_BLOCKS_COUNT BLOCKS_COUNT - PREDEFINED_BLOCKS_COUNT
 struct DataBitMap {
@@ -20,8 +21,16 @@ struct DirectoryDataItem {
 
 typedef struct DirectoryDataItem DirectoryDataItem;
 
-
+uint32_t WriteNewDirectoryDataItem(void *disk, Inode *curDir,
+                                   uint32_t inodeBlockIdx, const char *path);
+DirectoryDataItem *FindNthDataRegion(void *disk, uint32_t dataRegionIdx);
 void WriteCurrentDirectoryItemData(void *disk, uint32_t dataRegionIdx,
                                    uint32_t iNodeIdx);
+DataBitMap *FindDataBitMap(void *disk);
+uint32_t FindFirstFreeDataIdx(DataBitMap *dBitMap);
+void ReadDirectoryDataItem(void *disk, Inode *curDir);
+uint32_t UpdateDirectoryDataItem(void *disk, Inode *curDir, uint32_t curDataIdx,
+                                 uint32_t inodeBlockIdx, char *path);
+void UpdateDataBitMapNthNodeToOccupied(void *disk, uint32_t bitToSetFromMSB);
 
 #endif // !DATA_H

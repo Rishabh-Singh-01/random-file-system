@@ -2,6 +2,7 @@
 #include "data.h"
 #include "disk.h"
 #include "inode.h"
+#include <stdint.h>
 
 SuperBlock *InitializeSuperBlock(void *disk) {
   SuperBlock *sb = (SuperBlock *)disk;
@@ -17,20 +18,37 @@ SuperBlock *InitializeSuperBlock(void *disk) {
   return sb;
 }
 
-SuperBlock *UpdateSuperBlock(void *disk) {
+SuperBlock *FindSuperBlock(void *disk) { return (SuperBlock *)disk; }
+
+SuperBlock *UpdateSuperBlock(void *disk, uint32_t iBlockIdx,
+                             uint32_t dataBlockIdx) {
   SuperBlock *superBlock = (SuperBlock *)disk;
 
   superBlock->FreeInodesCount--;
-  superBlock->FreeBlocksCount--;
-  InodeBitMap *inodeTablePtr =
-      disk + (superBlock->InodeBitmapStartPtr * BLOCK_SIZE_BYTES);
-  uint32_t inodeMap = inodeTablePtr->Map;
-  uint32_t inodeMapMask = 1 << 31;
+  /*superBlock->FreeBlocksCount--;*/
+  // TODO: chek wtf to do here
+  InodeBitMap *inodeTablePtr = FindInodeBitMap(disk);
+  uint64_t inodeMap = inodeTablePtr->Map;
+  uint64_t inodeMapMask = 1l << (63 - iBlockIdx);
   inodeTablePtr->Map = inodeMap ^ inodeMapMask;
+  /*DataBitMap *dataTablePtr =*/
+  /*    disk + (superBlock->DataBitmapStartPtr * BLOCK_SIZE_BYTES);*/
+  /*uint64_t dataMap = dataTablePtr->Map;*/
+  /*uint64_t dataMapMask = 1l << (63 - (dataBlockIdx - 8));*/
+  /*dataTablePtr->Map = dataMap ^ dataMapMask;*/
+
+  return superBlock;
+}
+
+SuperBlock *UpdateSuperBlockDataOnly(void *disk, uint32_t dataBlockIdx) {
+  SuperBlock *superBlock = (SuperBlock *)disk;
+
+  superBlock->FreeBlocksCount--;
+  // TODO: chek wtf to do here
   DataBitMap *dataTablePtr =
       disk + (superBlock->DataBitmapStartPtr * BLOCK_SIZE_BYTES);
-  uint32_t dataMap = dataTablePtr->Map;
-  uint32_t dataMapMask = 1 << 31;
+  uint64_t dataMap = dataTablePtr->Map;
+  uint64_t dataMapMask = 1l << (63 - (dataBlockIdx - 8));
   dataTablePtr->Map = dataMap ^ dataMapMask;
 
   return superBlock;
