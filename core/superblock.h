@@ -18,5 +18,6 @@ struct SuperBlock {
 typedef struct SuperBlock SuperBlock;
 
 SuperBlock *InitializeSuperBlock(void *disk);
+SuperBlock *UpdateSuperBlock(void *disk);
 
 #endif // !SUPERBLOCK_H

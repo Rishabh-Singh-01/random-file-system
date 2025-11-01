@@ -20,4 +20,8 @@ struct DirectoryDataItem {
 
 typedef struct DirectoryDataItem DirectoryDataItem;
 
+
+void WriteCurrentDirectoryItemData(void *disk, uint32_t dataRegionIdx,
+                                   uint32_t iNodeIdx);
+
 #endif // !DATA_H

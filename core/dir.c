@@ -1,56 +1,48 @@
-#include "dir.h"
-#include "./../utils/logger.h"
-#include "data.h"
-#include "disk.h"
-#include "inode.h"
+#include <limits.h>
 #include <stdint.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "./../utils/logger.h"
+#include "data.c"
+#include "dir.h"
+#include "disk.h"
+#include "inode.h"
 #include "superblock.h"
-void InitializeRootDirectory(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
 
-  superBlock->FreeInodesCount--;
-  superBlock->FreeBlocksCount--;
-  InodeBitMap *inodeTablePtr =
-      disk + (superBlock->InodeBitmapStartPtr * BLOCK_SIZE_BYTES);
-  uint32_t inodeMap = inodeTablePtr->Map;
-  uint32_t inodeMapMask = 1 << 31;
-  inodeTablePtr->Map = inodeMap ^ inodeMapMask;
-  DataBitMap *dataTablePtr =
-      disk + (superBlock->DataBitmapStartPtr * BLOCK_SIZE_BYTES);
-  uint32_t dataMap = dataTablePtr->Map;
-  uint32_t dataMapMask = 1 << 31;
-  dataTablePtr->Map = dataMap ^ dataMapMask;
+void InitializeRootDirectory(void *disk) {
+  SuperBlock *superBlock = UpdateSuperBlock(disk);
 
   uint32_t rootDirIdx = superBlock->InodeTableStartPtr;
-  Inode *rootDirInode = disk + (rootDirIdx * BLOCK_SIZE_BYTES);
-  rootDirInode->Mode = MODE_DIRECTORY;
-  rootDirInode->Uid = getuid();
-  rootDirInode->Size = 0;
-  uint32_t currTimestamp = (uint32_t)time(NULL);
-  rootDirInode->Time = currTimestamp;
-  rootDirInode->CTime = currTimestamp;
-  rootDirInode->MTime = currTimestamp;
-  rootDirInode->DTime = currTimestamp;
-  rootDirInode->Gid = getegid();
-  rootDirInode->Links = 0;
-  rootDirInode->Flags = FLAGS_IMMUTABLE;
-  rootDirInode->Blocks = 1;
-  rootDirInode->Osd1 = OSD_GENERIC;
-  rootDirInode->InodeBlock.DirectPtr[0] = superBlock->DataRegionStartPtr;
-  rootDirInode->File = -1;
-  rootDirInode->Dir = superBlock->DataRegionStartPtr;
-  rootDirInode->Generation = GENERATION_GENERIC;
+  uint32_t dataRegionIdx = superBlock->DataRegionStartPtr;
+  Inode *rootDirInode = createDefaultDirectory(disk, rootDirIdx, dataRegionIdx);
 
   uint32_t rootDirDataRegionIdx = rootDirInode->Dir;
-  DirectoryDataItem *data = disk + (rootDirDataRegionIdx * BLOCK_SIZE_BYTES);
-  data->INum = rootDirIdx;
-  data->RecLen = 255;
-  data->StrLen = 2;
-  data->Str[0] = '.';
-  data->Str[1] = '\n';
+  WriteCurrentDirectoryItemData(disk, rootDirDataRegionIdx, rootDirIdx);
+}
+
+Inode *createDefaultDirectory(void *disk, uint32_t dirIdx,
+                              uint32_t dataRegionIdx) {
+  SuperBlock *superBlock = (SuperBlock *)disk;
+  Inode *dirInode = disk + (dirIdx * BLOCK_SIZE_BYTES);
+  dirInode->Mode = MODE_DIRECTORY;
+  dirInode->Uid = getuid();
+  dirInode->Size = 0;
+  uint32_t currTimestamp = (uint32_t)time(NULL);
+  dirInode->Time = currTimestamp;
+  dirInode->CTime = currTimestamp;
+  dirInode->MTime = currTimestamp;
+  dirInode->DTime = currTimestamp;
+  dirInode->Gid = getegid();
+  dirInode->Links = 0;
+  dirInode->Flags = FLAGS_ALL;
+  dirInode->Blocks = 1;
+  dirInode->Osd1 = OSD_GENERIC;
+  dirInode->InodeBlock.DirectPtr[0] = dataRegionIdx;
+  dirInode->File = 0;
+  dirInode->Dir = dataRegionIdx;
+  dirInode->Generation = GENERATION_GENERIC;
+  return dirInode;
 }
 
 void DumpRootDirectory(void *disk) {

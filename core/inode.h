@@ -28,7 +28,7 @@ typedef struct InodeBlock InodeBlock;
 enum IMode { MODE_NORMAL_FILE, MODE_DIRECTORY };
 typedef enum IMode IMode;
 
-enum IFlags { FLAGS_IMMUTABLE };
+enum IFlags { FLAGS_IMMUTABLE, FLAGS_ALL };
 typedef enum IFlags IFlags;
 
 enum IOSD { OSD_GENERIC };
