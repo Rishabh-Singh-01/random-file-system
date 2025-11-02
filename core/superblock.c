@@ -42,7 +42,7 @@ SuperBlock *UpdateSuperBlockDataOnly(void *disk, uint32_t dataBlockIdx) {
       disk + (superBlock->DataBitmapStartPtr * BLOCK_SIZE_BYTES);
   uint64_t dataMap = dataTablePtr->Map;
   uint64_t dataMapMask = 1l << (63 - (dataBlockIdx - 8));
-  dataTablePtr->Map = dataMap ^ dataMapMask;
+  dataTablePtr->Map = dataMap | dataMapMask;
 
   return superBlock;
 }

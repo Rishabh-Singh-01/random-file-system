@@ -5,17 +5,21 @@
 #include "inode.h"
 #include "superblock.h"
 #include <assert.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <string.h>
 
 void readDirDataItem(void *disk, Inode *curDir, uint32_t dataRegionIdx) {
   DirectoryDataItem *item = FindNthDataRegion(disk, dataRegionIdx);
-  LOG_INFO(
-      "Here is the info for data items: \n> Parent Inode Idx: %d,\n> Child "
-      "Data Region Idx: %d,\n> Child Inode Idx: "
-      "%d,\n> Child Rec Len: %d,\n> Child Str Len: %d,\n> Child Str Name: %s",
-      FindInodeBlockIdx(disk, curDir), dataRegionIdx, item->INum, item->RecLen,
-      item->StrLen, item->Str);
+  while (item->RecLen == PATH_NAME_MAX_LENGTH) {
+    LOG_INFO(
+        "Here is the info for data items: \n> Parent Inode Idx: %d,\n> Child "
+        "Data Region Idx: %d,\n> Child Inode Idx: "
+        "%d,\n> Child Rec Len: %d,\n> Child Str Len: %d,\n> Child Str Name: %s",
+        FindInodeBlockIdx(disk, curDir), dataRegionIdx, item->INum,
+        item->RecLen, item->StrLen, item->Str);
+    item++;
+  }
 }
 
 void ReadDirectoryDataItem(void *disk, Inode *curDir) {
@@ -24,15 +28,11 @@ void ReadDirectoryDataItem(void *disk, Inode *curDir) {
 
 uint32_t WriteNewDirectoryDataItem(void *disk, Inode *curDir,
                                    uint32_t inodeBlockIdx, const char *path) {
-  uint8_t i = 0;
-  while (i < MAX_DIRECT_DATA_REGION_LINK_COUNT &&
-         curDir->InodeBlock.DirectPtr[i] != 0) {
-    i++;
+  uint32_t dataIdx = curDir->InodeBlock.DirectPtr[0];
+  DirectoryDataItem *data = FindNthDataRegion(disk, dataIdx);
+  while (data->RecLen == PATH_NAME_MAX_LENGTH) {
+    data++;
   }
-  uint32_t dataIdx = FindFirstFreeDataIdx(FindDataBitMap(disk));
-  curDir->InodeBlock.DirectPtr[i] = dataIdx;
-  DirectoryDataItem *data =
-      FindNthDataRegion(disk, curDir->InodeBlock.DirectPtr[i]);
   data->INum = inodeBlockIdx;
   data->RecLen = PATH_NAME_MAX_LENGTH;
   data->StrLen = strlen(path);

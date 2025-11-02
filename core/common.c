@@ -59,7 +59,6 @@ Inode *TravelToDirFromPathName(void *disk, const char *pathPtr,
   char *splitedStr;
   splitedStr = strtok(tempStr, delimiter);
   while (splitedStr != NULL) {
-    DumpAnyDirectory(dirInode);
     matchedInodeBlockIdx = findDirInodeWithValidName(splitedStr, dirInode);
     splitedStr = strtok(NULL, delimiter);
     dirInode = cb(splitedStr, matchedInodeBlockIdx, dirInode);

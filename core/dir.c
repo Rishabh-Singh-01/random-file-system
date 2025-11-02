@@ -38,8 +38,11 @@ Inode *ListDirTravelMatchConditionCb(const char *splitedStr,
 uint32_t inodeDirectChildsContainsPathName(const char *path, Inode *dirNode,
                                            uint32_t dataRegionIdx) {
   DirectoryDataItem *item = FindNthDataRegion(DiskPtr, dataRegionIdx);
-  if (strcmp(item->Str, path) == 0) {
-    return item->INum;
+  while (item->RecLen == PATH_NAME_MAX_LENGTH) {
+    if (strcmp(item->Str, path) == 0) {
+      return item->INum;
+    }
+    item++;
   }
   return -1;
 }
@@ -92,12 +95,11 @@ Inode *CreateDefaultDirectory(void *disk) {
 
   DataBitMap *dBitMap = FindDataBitMap(disk);
   uint32_t firstFreeDataIdx = FindFirstFreeDataIdx(dBitMap);
-  Inode *curDir = FindNthInode(disk, firstFreeDataIdx);
 
   Inode *inode =
       createDirectoryInode(disk, firstFreeInodeBlockIdx, firstFreeDataIdx);
   uint32_t dataIdx =
-      WriteNewDirectoryDataItem(disk, curDir, firstFreeInodeBlockIdx, ".");
+      WriteNewDirectoryDataItem(disk, inode, firstFreeInodeBlockIdx, ".");
   return inode;
 }
 
@@ -149,7 +151,7 @@ void DumpAnyDirectory(Inode *rootDirInode) {
   LOG_INFO("Root Dir: Generation:                 %u",
            rootDirInode->Generation);
   ReadDirectoryDataItem(DiskPtr, rootDirInode);
-  LOG_INFO("---------- DUMPING META INFO FROM ROOT DIR ENDED ------------");
+  LOG_INFO("---------- DUMPING META INFO FROM ANY DIR ENDED ------------");
 }
 
 void DumpRootDirectory(void *disk) {
@@ -182,5 +184,5 @@ void DumpRootDirectory(void *disk) {
   LOG_INFO("Root Dir: Inode Block 0: Rec Leng:    %u", dataItem->RecLen);
   LOG_INFO("Root Dir: Inode Block 0: Str Leng:    %u", dataItem->StrLen);
   LOG_INFO("Root Dir: Inode Block 0: Str Name:    %s", &((dataItem->Str)[0]));
-  LOG_INFO("---------- DUMPING META INFO FROM ANY DIR ENDED ------------");
+  LOG_INFO("---------- DUMPING META INFO FROM ROOT DIR ENDED ------------");
 }
