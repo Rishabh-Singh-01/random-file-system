@@ -3,6 +3,7 @@
 #include "inode.h"
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 void ExecuteCbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
@@ -26,7 +27,7 @@ uint32_t ExecuteInt32CbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
       return temp;
     i++;
   }
-  return 0;
+  return -1;
 }
 
 void AssertDirConfigs(void *disk, const char *path) {
@@ -46,24 +47,27 @@ Inode *TravelToDirFromPathName(void *disk, const char *pathPtr,
   strcpy(tempStr, pathPtr);
   const char delimiter[] = PATH_NAME_DELIMITER;
   char *splitedStr;
-  char copiedStr[PATH_NAME_MAX_LENGTH];
   splitedStr = strtok(tempStr, delimiter);
   while (splitedStr != NULL) {
+    DumpAnyDirectory(dirInode);
     matchedInodeBlockIdx = findDirInodeWithValidName(splitedStr, dirInode);
-    strcpy(copiedStr, splitedStr);
     splitedStr = strtok(NULL, delimiter);
     dirInode = cb(splitedStr, matchedInodeBlockIdx, dirInode);
   }
+
   return dirInode;
 }
 
 const char *PathNameEndPart(const char *pathPtr) {
+  size_t pathLenOrg = strlen(pathPtr);
   uint8_t delimiterCount = 0;
   const char *temp = pathPtr;
-  while (*temp != '\n') {
+  size_t pathLen = strlen(pathPtr);
+  while (pathLen > 0) {
     if (*temp == '/')
       delimiterCount++;
     temp++;
+    pathLen--;
   }
   assert(delimiterCount >= 0 && "Delimiter Count should be greater than 0");
 

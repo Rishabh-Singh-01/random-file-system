@@ -21,18 +21,19 @@ Inode *makeDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode) {
   if (splitedStr == NULL) {
-    assert(matchedInodeBlockIdx == 0 && "New Directory to make already exists");
+    assert(matchedInodeBlockIdx == -1 &&
+           "New Directory to make already exists");
     return dirInode;
   }
 
-  assert(matchedInodeBlockIdx != 0 && "Unable to find any matching path name");
+  assert(matchedInodeBlockIdx != -1 && "Unable to find any matching path name");
   return FindNthInode(DiskPtr, matchedInodeBlockIdx);
 }
 
 Inode *listDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode) {
-  assert(matchedInodeBlockIdx != 0 && "Required Directory does not exists");
+  assert(matchedInodeBlockIdx != -1 && "Required Directory does not exists");
   return FindNthInode(DiskPtr, matchedInodeBlockIdx);
 }
 
@@ -149,12 +150,7 @@ void DumpAnyDirectory(Inode *rootDirInode) {
   LOG_INFO("Root Dir: Dir:                        %u", rootDirInode->Dir);
   LOG_INFO("Root Dir: Generation:                 %u",
            rootDirInode->Generation);
-  DirectoryDataItem *dataItem =
-      DiskPtr + (rootDirInode->InodeBlock.DirectPtr[0] * BLOCK_SIZE_BYTES);
-  LOG_INFO("Root Dir: Inode Block 0: INode Num:   %u", dataItem->INum);
-  LOG_INFO("Root Dir: Inode Block 0: Rec Leng:    %u", dataItem->RecLen);
-  LOG_INFO("Root Dir: Inode Block 0: Str Leng:    %u", dataItem->StrLen);
-  LOG_INFO("Root Dir: Inode Block 0: Str Name:    %s", &((dataItem->Str)[0]));
+  ReadDirectoryDataItem(DiskPtr, rootDirInode);
   LOG_INFO("---------- DUMPING META INFO FROM ROOT DIR ENDED ------------");
 }
 
