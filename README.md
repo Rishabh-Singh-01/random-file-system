@@ -17,21 +17,14 @@ This section assumes you have the necessary source files and a `Makefile` config
     cd fs-prototype
     ```
 
-2.  **Compile the Project:**
+2.  **Compile and Run the Project:**
     The provided `Makefile` should be configured to compile the main demonstration program. Requires `gcc`.
 
     ```bash
     make
     ```
 
-3.  **Run the Demo:**
-    Execute the compiled demonstration program.
-
-    ```bash
-    ./fs_demo
-    ```
-
-4.  **Key Functions (API):**
+3.  **Key Functions (API):**
     Once set up, the core functions for interacting with the file system typically involve:
 
       * **Directory Creation:** `void MakeDirectory(const char *pathPtr);`
