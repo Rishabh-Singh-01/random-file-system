@@ -13,7 +13,8 @@ void MakeDirectory(const char *pathPtr);
 Inode *CreateDefaultDirectory(void *disk);
 Inode *createDirectoryInode(void *disk, uint32_t dirIdx,
                             uint32_t dataRegionIdx);
-void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir, char *path);
+void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir,
+                               const char *path);
 void LinkChildDirWithParentDir(Inode *childDir, Inode *parentDir);
 void LinkDirectoryWithParentDir(Inode *curDir, Inode *parentDir);
 void ListDirectory(const char *pathPtr);

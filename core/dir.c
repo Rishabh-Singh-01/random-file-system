@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "./../utils/logger.h"
+#include "common.h"
 #include "data.c"
 #include "data.h"
 #include "dir.h"
@@ -16,20 +17,37 @@
 
 void *DiskPtr;
 
-uint32_t findDirInodeWithValidName(const char *path, Inode *dirNode) {
-  size_t len = strlen(path);
-  uint8_t i = 0;
-  while (i < MAX_DIRECT_DATA_REGION_LINK_COUNT &&
-         dirNode->InodeBlock.DirectPtr[i] != 0) {
-    uint32_t dataRegionIdx = dirNode->InodeBlock.DirectPtr[i];
-    DirectoryDataItem *item = FindNthDataRegion(DiskPtr, dataRegionIdx);
-    i++;
-    if (strcmp(item->Str, path) != 0) {
-      continue;
-    }
+Inode *makeDirTravelMatchConditionCb(const char *splitedStr,
+                                     uint32_t matchedInodeBlockIdx,
+                                     Inode *dirInode) {
+  if (splitedStr == NULL) {
+    assert(matchedInodeBlockIdx == 0 && "New Directory to make already exists");
+    return dirInode;
+  }
+
+  assert(matchedInodeBlockIdx != 0 && "Unable to find any matching path name");
+  return FindNthInode(DiskPtr, matchedInodeBlockIdx);
+}
+
+Inode *listDirTravelMatchConditionCb(const char *splitedStr,
+                                     uint32_t matchedInodeBlockIdx,
+                                     Inode *dirInode) {
+  assert(matchedInodeBlockIdx != 0 && "Required Directory does not exists");
+  return FindNthInode(DiskPtr, matchedInodeBlockIdx);
+}
+
+uint32_t inodeDirectChildsContainsPathName(const char *path, Inode *dirNode,
+                                           uint32_t dataRegionIdx) {
+  DirectoryDataItem *item = FindNthDataRegion(DiskPtr, dataRegionIdx);
+  if (strcmp(item->Str, path) == 0) {
     return item->INum;
   }
-  return 0;
+  return -1;
+}
+
+uint32_t findDirInodeWithValidName(const char *path, Inode *dirNode) {
+  return ExecuteInt32CbOnInodeValidDirectPtrs(
+      DiskPtr, dirNode, path, inodeDirectChildsContainsPathName);
 }
 
 void InitializeRootDirectory(void *disk) {
@@ -37,114 +55,55 @@ void InitializeRootDirectory(void *disk) {
   CreateDefaultDirectory(disk);
 }
 
-void MakeDirectory(const char *pathPtr) {
-  LOG_DEBUG("Mkae directory starting here");
-  assert(strlen(pathPtr) <= PATH_NAME_MAX_LENGTH &&
-         "Path name should be less than 255 chars");
-  assert(DiskPtr != NULL && "Root Directory MetaData Not found");
-  assert(*pathPtr == '/' &&
-         "Directory Path Should always start with root directory");
+void ListDirectory(const char *pathPtr) {
+  AssertDirConfigs(DiskPtr, pathPtr);
 
-  Inode *dirInode = FindFirstInode(DiskPtr);
-  uint32_t matchedInodeBlockIdx = 0;
+  Inode *dirInode =
+      TravelToDirFromPathName(DiskPtr, pathPtr, listDirTravelMatchConditionCb);
 
-  char tempStr[PATH_NAME_MAX_LENGTH];
-  strcpy(tempStr, pathPtr);
-  const char delimiter[] = PATH_NAME_DELIMITER;
-  char *splitedStr;
-  char copiedStr[PATH_NAME_MAX_LENGTH];
-  splitedStr = strtok(tempStr, delimiter);
-  while (splitedStr != NULL) {
-    matchedInodeBlockIdx = findDirInodeWithValidName(splitedStr, dirInode);
-    strcpy(copiedStr, splitedStr);
-    splitedStr = strtok(NULL, delimiter);
-    if (splitedStr != NULL) {
-      assert(matchedInodeBlockIdx != 0 &&
-             "Unable to find any matching path name");
-      dirInode = FindNthInode(DiskPtr, matchedInodeBlockIdx);
-    } else {
-      LOG_DEBUG("God knows Update: %d", FindInodeBlockIdx(DiskPtr, dirInode));
-      assert(matchedInodeBlockIdx == 0 &&
-             "New Directory to make already exists");
-    }
-  }
-  Inode *newDir = CreateDefaultDirectory(DiskPtr);
-  DumpAnyDirectory(newDir);
-  LOG_DEBUG("--------------God knows Parent: %d",
-            FindInodeBlockIdx(DiskPtr, dirInode));
-  LOG_DEBUG("God knows: %d", FindInodeBlockIdx(DiskPtr, newDir));
-  LinkParentDirWithChildDir(newDir, dirInode, copiedStr);
-  LinkChildDirWithParentDir(newDir, dirInode);
-  /*LinkDirectoryWithParentDir(newDir, dirInode);*/
+  ReadDirectoryDataItem(DiskPtr, dirInode);
 }
 
-void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir, char *path) {
-  LOG_DEBUG("Child Dir Node: %d, Parent Dir Node %d",
-            FindInodeBlockIdx(DiskPtr, childDir),
-            FindInodeBlockIdx(DiskPtr, parentDir));
+void MakeDirectory(const char *pathPtr) {
+  AssertDirConfigs(DiskPtr, pathPtr);
+
+  Inode *dirInode =
+      TravelToDirFromPathName(DiskPtr, pathPtr, makeDirTravelMatchConditionCb);
+  const char *lastPartStr = PathNameEndPart(pathPtr);
+
+  Inode *newDir = CreateDefaultDirectory(DiskPtr);
+  LinkParentDirWithChildDir(newDir, dirInode, lastPartStr);
+  LinkChildDirWithParentDir(newDir, dirInode);
+}
+
+void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir,
+                               const char *path) {
   uint32_t childDirInodeBlockIdx = FindInodeBlockIdx(DiskPtr, childDir);
-  /*UpdateDirectoryDataItem(DiskPtr, parentDir,
-   * childDir->InodeBlock.DirectPtr[0],*/
-  /*                        childDirInodeBlockIdx, path);*/
   WriteNewDirectoryDataItem(DiskPtr, parentDir, childDirInodeBlockIdx, path);
 }
 
 void LinkChildDirWithParentDir(Inode *childDir, Inode *parentDir) {
-  LOG_DEBUG("Child Dir Node: %d, Parent Dir Node %d",
-            FindInodeBlockIdx(DiskPtr, childDir),
-            FindInodeBlockIdx(DiskPtr, parentDir));
   uint32_t childDirInodeBlockIdx = FindInodeBlockIdx(DiskPtr, parentDir);
   WriteNewDirectoryDataItem(DiskPtr, childDir, childDirInodeBlockIdx, "..");
 }
 
-void LinkDirectoryWithParentDir(Inode *childDir, Inode *parentDir) {
-  LOG_DEBUG("New Dir Node: %d, Parent Dir Node %d",
-            FindInodeBlockIdx(DiskPtr, childDir),
-            FindInodeBlockIdx(DiskPtr, parentDir));
-  uint32_t parentDirInodeBlockIdx = FindInodeBlockIdx(DiskPtr, parentDir);
-  WriteNewDirectoryDataItem(DiskPtr, childDir, parentDirInodeBlockIdx, "..");
-}
-
 Inode *CreateDefaultDirectory(void *disk) {
   InodeBitMap *iBitMap = FindInodeBitMap(disk);
-  LOG_DEBUG("inode bit map %" PRIu64, iBitMap->Map);
   uint32_t firstFreeInodeBlockIdx = FindFirstFreeInodeIdx(iBitMap);
-  LOG_DEBUG("This is the first free inode block %d", firstFreeInodeBlockIdx);
 
   DataBitMap *dBitMap = FindDataBitMap(disk);
   uint32_t firstFreeDataIdx = FindFirstFreeDataIdx(dBitMap);
-  LOG_DEBUG("This is the first free data block %d", firstFreeDataIdx);
   Inode *curDir = FindNthInode(disk, firstFreeDataIdx);
 
   Inode *inode =
       createDirectoryInode(disk, firstFreeInodeBlockIdx, firstFreeDataIdx);
-  LOG_DEBUG("FOund the new inode free: %d", FindInodeBlockIdx(DiskPtr, inode));
   uint32_t dataIdx =
       WriteNewDirectoryDataItem(disk, curDir, firstFreeInodeBlockIdx, ".");
-  LOG_DEBUG("FOund the data index free: %d", dataIdx);
-
-  LOG_DEBUG("Before update: inode bit map %" PRIu64,
-            FindInodeBitMap(disk)->Map);
-  LOG_DEBUG("Before update: data bit map %" PRIu64, FindDataBitMap(disk)->Map);
-  SuperBlock *superBlock =
-      UpdateSuperBlock(disk, firstFreeInodeBlockIdx, firstFreeDataIdx);
-  LOG_DEBUG("After update: inode bit map %" PRIu64, FindInodeBitMap(disk)->Map);
-  LOG_DEBUG("After update: data bit map %" PRIu64, FindDataBitMap(disk)->Map);
-
-  /*uint32_t inodeBlockIdx = FindInodeBlockIdx(DiskPtr, inode);*/
-  /*LOG_DEBUG("updating the following values: inode %d, data: %d",
-   * inodeBlockIdx,*/
-  /*          dataIdx);*/
-  /*UpdateInodeBitMapNthNodeToOccupied(DiskPtr, inodeBlockIdx);*/
-  /*UpdateDataBitMapNthNodeToOccupied(DiskPtr, dataIdx);*/
-
   return inode;
 }
 
 Inode *createDirectoryInode(void *disk, uint32_t iBlockIdx,
                             uint32_t dataRegionIdx) {
-  LOG_DEBUG("From inside of directory node %d", iBlockIdx);
-  LOG_DEBUG("From inside of directory node %d", dataRegionIdx);
   Inode *inode = FindFirstInode(disk);
   Inode *dirInode = inode + iBlockIdx;
 
@@ -165,38 +124,9 @@ Inode *createDirectoryInode(void *disk, uint32_t iBlockIdx,
   dirInode->File = 0;
   dirInode->Dir = 0;
   dirInode->Generation = GENERATION_GENERIC;
+
+  UpdateSuperBlockInodeOnly(disk, iBlockIdx, dataRegionIdx);
   return dirInode;
-}
-
-void ListDirectory(const char *pathPtr) {
-  assert(strlen(pathPtr) <= PATH_NAME_MAX_LENGTH &&
-         "Path name should be less than 255 chars");
-  assert(DiskPtr != NULL && "Root Directory MetaData Not found");
-  assert(*pathPtr == '/' &&
-         "Directory Path Should always start with root directory");
-
-  Inode *dirInode = FindFirstInode(DiskPtr);
-  uint32_t matchedInodeBlockIdx = 0;
-
-  char tempStr[PATH_NAME_MAX_LENGTH];
-  strcpy(tempStr, pathPtr);
-  const char delimiter[] = PATH_NAME_DELIMITER;
-  char *splitedStr;
-  splitedStr = strtok(tempStr, delimiter);
-  while (splitedStr != NULL) {
-    matchedInodeBlockIdx = findDirInodeWithValidName(splitedStr, dirInode);
-    assert(matchedInodeBlockIdx != 0 && "Required Directory does not exists");
-    dirInode = FindNthInode(DiskPtr, matchedInodeBlockIdx);
-    splitedStr = strtok(NULL, delimiter);
-    /*if (splitedStr != NULL) {*/
-    /*  assert(matchedInodeBlockIdx == 0 &&*/
-    /*         "Unable to find any matching path name");*/
-    /*} else {*/
-    /*}*/
-  }
-
-  LOG_DEBUG("Parent here; %d", FindInodeBlockIdx(DiskPtr, dirInode));
-  ReadDirectoryDataItem(DiskPtr, dirInode);
 }
 
 void DumpAnyDirectory(Inode *rootDirInode) {

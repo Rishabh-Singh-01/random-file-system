@@ -26,6 +26,7 @@ void *InitializeDisk() {
   InitializeInodeBitMap(disk);
   initializeDiskBitMap(disk);
   InitializeRootDirectory(disk);
+  DiskPtr = disk;
   return disk;
 }
 
