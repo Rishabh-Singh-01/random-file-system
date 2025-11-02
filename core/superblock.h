@@ -17,10 +17,10 @@ struct SuperBlock {
 
 typedef struct SuperBlock SuperBlock;
 
-SuperBlock *FindSuperBlock(void *disk);
-SuperBlock *InitializeSuperBlock(void *disk);
-SuperBlock *UpdateSuperBlockInodeOnly(void *disk, uint32_t iBlockIdx,
+SuperBlock *FindSuperBlock();
+SuperBlock *InitializeSuperBlock();
+SuperBlock *UpdateSuperBlockInodeOnly(uint32_t iBlockIdx,
                                       uint32_t dataBlockIdx);
-SuperBlock *UpdateSuperBlockDataOnly(void *disk, uint32_t dataBlockIdx);
+SuperBlock *UpdateSuperBlockDataOnly(uint32_t dataBlockIdx);
 
 #endif // !SUPERBLOCK_H

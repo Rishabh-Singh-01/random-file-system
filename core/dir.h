@@ -6,7 +6,7 @@
 #define MAX_DIRECT_DATA_REGION_LINK_COUNT 12
 #define PATH_NAME_MAX_LENGTH 255
 #define PATH_NAME_DELIMITER "/"
-void DumpRootDirectory(void *disk);
+void DumpRootDirectory();
 
 Inode *MakeDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
@@ -18,9 +18,8 @@ Inode *ListDirTravelMatchConditionCb(const char *splitedStr,
 
 uint32_t findDirInodeWithValidName(const char *path, Inode *dirNode);
 void MakeDirectory(const char *pathPtr);
-Inode *CreateDefaultDirectory(void *disk);
-Inode *createDirectoryInode(void *disk, uint32_t dirIdx,
-                            uint32_t dataRegionIdx);
+Inode *CreateDefaultDirectory();
+Inode *createDirectoryInode(uint32_t dirIdx, uint32_t dataRegionIdx);
 void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir,
                                const char *path);
 void LinkChildDirWithParentDir(Inode *childDir, Inode *parentDir);

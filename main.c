@@ -9,7 +9,7 @@
 #include "core/file.h"
 
 int main() {
-  void *disk = InitializeDisk();
+  InitializeDisk();
   MakeDirectory("/hello1");
   MakeDirectory("/hello2");
   MakeDirectory("/hello2/hello3");

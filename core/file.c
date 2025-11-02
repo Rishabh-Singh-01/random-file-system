@@ -10,9 +10,8 @@
 #include <time.h>
 #include <unistd.h>
 
-Inode *createBlankFileInode(void *disk, uint32_t iBlockIdx,
-                            uint32_t dataRegionIdx) {
-  Inode *inode = FindFirstInode(disk);
+Inode *createBlankFileInode(uint32_t iBlockIdx, uint32_t dataRegionIdx) {
+  Inode *inode = FindFirstInode();
   Inode *dirInode = inode + iBlockIdx;
 
   dirInode->Mode = MODE_NORMAL_FILE;
@@ -33,38 +32,37 @@ Inode *createBlankFileInode(void *disk, uint32_t iBlockIdx,
   dirInode->Dir = 0;
   dirInode->Generation = GENERATION_GENERIC;
 
-  UpdateSuperBlockInodeOnly(disk, iBlockIdx, dataRegionIdx);
-  UpdateSuperBlockDataOnly(disk, dataRegionIdx);
+  UpdateSuperBlockInodeOnly(iBlockIdx, dataRegionIdx);
+  UpdateSuperBlockDataOnly(dataRegionIdx);
   return dirInode;
 }
 
-Inode *createBlankFile(void *disk) {
-  InodeBitMap *iBitMap = FindInodeBitMap(disk);
+Inode *createBlankFile() {
+  InodeBitMap *iBitMap = FindInodeBitMap();
   uint32_t firstFreeInodeBlockIdx = FindFirstFreeInodeIdx(iBitMap);
 
-  DataBitMap *dBitMap = FindDataBitMap(disk);
+  DataBitMap *dBitMap = FindDataBitMap();
   uint32_t firstFreeDataIdx = FindFirstFreeDataIdx(dBitMap);
-  Inode *freeDataRegionInode = FindNthInode(disk, firstFreeDataIdx);
+  Inode *freeDataRegionInode = FindNthInode(firstFreeDataIdx);
 
-  Inode *inode =
-      createBlankFileInode(disk, firstFreeInodeBlockIdx, firstFreeDataIdx);
+  Inode *inode = createBlankFileInode(firstFreeInodeBlockIdx, firstFreeDataIdx);
   return inode;
 }
 
 void linkParentDirWithChildFile(Inode *childFile, Inode *parentDir,
                                 const char *path) {
-  uint32_t childFileInodeBlockIdx = FindInodeBlockIdx(DiskPtr, childFile);
-  WriteNewDirectoryDataItem(DiskPtr, parentDir, childFileInodeBlockIdx, path);
+  uint32_t childFileInodeBlockIdx = FindInodeBlockIdx(childFile);
+  WriteNewDirectoryDataItem(parentDir, childFileInodeBlockIdx, path);
 }
 
 void CreateFile(const char *pathPtr) {
-  AssertFileConfigs(DiskPtr, pathPtr);
+  AssertFileConfigs(pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, MakeDirTravelMatchConditionCb);
+      TravelToDirFromPathName(pathPtr, MakeDirTravelMatchConditionCb);
   const char *lastPartStr = PathNameEndPart(pathPtr);
 
-  Inode *newDir = createBlankFile(DiskPtr);
+  Inode *newDir = createBlankFile();
   linkParentDirWithChildFile(newDir, dirInode, lastPartStr);
 }
 
@@ -73,7 +71,7 @@ void writeDataToFileOnly(Inode *dirInode, const char *fileData) {
   uint32_t dataRegionIdx = dirInode->InodeBlock.DirectPtr[0];
   // TODO: prev made this method always return DataDirectoryRegion, should have
   // been void *, then caller fn will convert itself
-  void *dataRegion = (void *)FindNthDataRegion(DiskPtr, dataRegionIdx);
+  void *dataRegion = (void *)FindNthDataRegion(dataRegionIdx);
   strcpy(dataRegion, fileData);
 }
 
@@ -82,24 +80,24 @@ void readDataFromFile(Inode *dirInode) {
   uint32_t dataRegionIdx = dirInode->InodeBlock.DirectPtr[0];
   // TODO: prev made this method always return DataDirectoryRegion, should have
   // been void *, then caller fn will convert itself
-  char *dataRegion = (char *)FindNthDataRegion(DiskPtr, dataRegionIdx);
+  char *dataRegion = (char *)FindNthDataRegion(dataRegionIdx);
   LOG_INFO("Here is the reading from file:\n%s", dataRegion);
 }
 
 void WriteToFile(const char *pathPtr, const char *fileData) {
-  AssertFileConfigs(DiskPtr, pathPtr);
+  AssertFileConfigs(pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, ListDirTravelMatchConditionCb);
+      TravelToDirFromPathName(pathPtr, ListDirTravelMatchConditionCb);
 
   writeDataToFileOnly(dirInode, fileData);
 }
 
 void ReadFile(const char *pathPtr) {
-  AssertFileConfigs(DiskPtr, pathPtr);
+  AssertFileConfigs(pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, ListDirTravelMatchConditionCb);
+      TravelToDirFromPathName(pathPtr, ListDirTravelMatchConditionCb);
 
   readDataFromFile(dirInode);
 }

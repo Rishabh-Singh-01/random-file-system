@@ -8,18 +8,16 @@
 
 void *DiskPtr;
 
-void ExecuteCbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
-                                     CbInodeValidDirectPtrs cb) {
+void ExecuteCbOnInodeValidDirectPtrs(Inode *curDir, CbInodeValidDirectPtrs cb) {
   uint8_t i = 0;
   while (i < MAX_DIRECT_DATA_REGION_LINK_COUNT &&
          curDir->InodeBlock.DirectPtr[i] != 0) {
-    cb(disk, curDir, curDir->InodeBlock.DirectPtr[i]);
+    cb(curDir, curDir->InodeBlock.DirectPtr[i]);
     i++;
   }
 }
 
-uint32_t ExecuteInt32CbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
-                                              const char *path,
+uint32_t ExecuteInt32CbOnInodeValidDirectPtrs(Inode *curDir, const char *path,
                                               Int32CbInodeValidDirectPtrs cb) {
   uint8_t i = 0;
   while (i < MAX_DIRECT_DATA_REGION_LINK_COUNT &&
@@ -32,25 +30,25 @@ uint32_t ExecuteInt32CbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
   return -1;
 }
 
-void AssertFileConfigs(void *disk, const char *path) {
-  assert(disk != NULL && "Root Directory MetaData Not found");
+void AssertFileConfigs(const char *path) {
+  assert(DiskPtr != NULL && "Root Directory MetaData Not found");
   assert(strlen(path) <= PATH_NAME_MAX_LENGTH &&
          "Path name should be less than 255 chars");
   assert(*path == '/' &&
          "Directory Path Should always start with root directory");
 }
 
-void AssertDirConfigs(void *disk, const char *path) {
-  assert(disk != NULL && "Root Directory MetaData Not found");
+void AssertDirConfigs(const char *path) {
+  assert(DiskPtr != NULL && "Root Directory MetaData Not found");
   assert(strlen(path) <= PATH_NAME_MAX_LENGTH &&
          "Path name should be less than 255 chars");
   assert(*path == '/' &&
          "Directory Path Should always start with root directory");
 }
 
-Inode *TravelToDirFromPathName(void *disk, const char *pathPtr,
+Inode *TravelToDirFromPathName(const char *pathPtr,
                                CbTravelToDirMatchCondition cb) {
-  Inode *dirInode = FindFirstInode(disk);
+  Inode *dirInode = FindFirstInode();
   uint32_t matchedInodeBlockIdx = 0;
 
   char tempStr[PATH_NAME_MAX_LENGTH];
@@ -68,7 +66,6 @@ Inode *TravelToDirFromPathName(void *disk, const char *pathPtr,
 }
 
 const char *PathNameEndPart(const char *pathPtr) {
-  size_t pathLenOrg = strlen(pathPtr);
   uint8_t delimiterCount = 0;
   const char *temp = pathPtr;
   size_t pathLen = strlen(pathPtr);

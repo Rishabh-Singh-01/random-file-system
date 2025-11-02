@@ -1,4 +1,5 @@
 #include "disk.h"
+#include "common.h"
 #include "stdlib.h"
 #include <assert.h>
 #include <stdint.h>
@@ -11,30 +12,29 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-DataBitMap *initializeDiskBitMap(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
+DataBitMap *initializeDiskBitMap() {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   uint32_t dBitMapIdx = superBlock->DataBitmapStartPtr;
-  DataBitMap *dBitMap = disk + (dBitMapIdx * BLOCK_SIZE_BYTES);
+  DataBitMap *dBitMap = DiskPtr + (dBitMapIdx * BLOCK_SIZE_BYTES);
   dBitMap->Count = DATA_BLOCKS_COUNT;
   dBitMap->Map = 0;
   return dBitMap;
 }
 
 void *InitializeDisk() {
-  void *disk = malloc(DISK_SIZE_BYTES);
-  InitializeSuperBlock(disk);
-  InitializeInodeBitMap(disk);
-  initializeDiskBitMap(disk);
-  InitializeRootDirectory(disk);
-  DiskPtr = disk;
-  return disk;
+  DiskPtr = malloc(DISK_SIZE_BYTES);
+  InitializeSuperBlock();
+  InitializeInodeBitMap();
+  initializeDiskBitMap();
+  InitializeRootDirectory();
+  return DiskPtr;
 }
 
-void DumpDiskMetaData(void *disk) {
+void DumpDiskMetaData() {
   LOG_INFO("---------- DUMPING META INFO FROM DISK STARTED ------------");
-  LOG_INFO("Disk: Pointer:                    %p", disk);
+  LOG_INFO("Disk: Pointer:                    %p", DiskPtr);
   LOG_INFO("----- SUPER BLOCK -----");
-  SuperBlock *superBlock = (SuperBlock *)disk;
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   LOG_INFO("SuperBlock: Pointer:              %p", superBlock);
   LOG_INFO("SuperBlock: Magic ID:             %u (0x%X)", superBlock->MagicId,
            superBlock->MagicId);
@@ -52,14 +52,14 @@ void DumpDiskMetaData(void *disk) {
 
   LOG_INFO("----- INODE BIT MAP -----");
   uint32_t iBitMapIdx = superBlock->InodeBitmapStartPtr;
-  InodeBitMap *iBitMap = disk + (iBitMapIdx * BLOCK_SIZE_BYTES);
+  InodeBitMap *iBitMap = DiskPtr + (iBitMapIdx * BLOCK_SIZE_BYTES);
   LOG_INFO("Inode BitMap: Pointer:            %p", iBitMap);
   LOG_INFO("Inode BitMap: Blocks Count:       %u", iBitMap->Count);
   LOG_INFO("Inode BitMap: Block Size (bytes): %" PRIu64, iBitMap->Map);
 
   LOG_INFO("----- DATA BIT MAP -----");
   uint32_t dBitMapIdx = superBlock->DataBitmapStartPtr;
-  DataBitMap *dBitMap = disk + (dBitMapIdx * BLOCK_SIZE_BYTES);
+  DataBitMap *dBitMap = DiskPtr + (dBitMapIdx * BLOCK_SIZE_BYTES);
   LOG_INFO("Data BitMap: Pointer:             %p", dBitMap);
   LOG_INFO("Data BitMap: Blocks Count:        %u", dBitMap->Count);
   LOG_INFO("Data BitMap: Block Size (bytes):  %" PRIu64, dBitMap->Map);

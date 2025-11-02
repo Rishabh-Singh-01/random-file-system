@@ -25,19 +25,19 @@ Inode *MakeDirTravelMatchConditionCb(const char *splitedStr,
   }
 
   assert(matchedInodeBlockIdx != -1 && "Unable to find any matching path name");
-  return FindNthInode(DiskPtr, matchedInodeBlockIdx);
+  return FindNthInode(matchedInodeBlockIdx);
 }
 
 Inode *ListDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode) {
   assert(matchedInodeBlockIdx != -1 && "Required Directory does not exists");
-  return FindNthInode(DiskPtr, matchedInodeBlockIdx);
+  return FindNthInode(matchedInodeBlockIdx);
 }
 
 uint32_t inodeDirectChildsContainsPathName(const char *path, Inode *dirNode,
                                            uint32_t dataRegionIdx) {
-  DirectoryDataItem *item = FindNthDataRegion(DiskPtr, dataRegionIdx);
+  DirectoryDataItem *item = FindNthDataRegion(dataRegionIdx);
   while (item->RecLen == PATH_NAME_MAX_LENGTH) {
     if (strcmp(item->Str, path) == 0) {
       return item->INum;
@@ -49,63 +49,58 @@ uint32_t inodeDirectChildsContainsPathName(const char *path, Inode *dirNode,
 
 uint32_t findDirInodeWithValidName(const char *path, Inode *dirNode) {
   return ExecuteInt32CbOnInodeValidDirectPtrs(
-      DiskPtr, dirNode, path, inodeDirectChildsContainsPathName);
+      dirNode, path, inodeDirectChildsContainsPathName);
 }
 
-void InitializeRootDirectory(void *disk) {
-  DiskPtr = disk;
-  CreateDefaultDirectory(disk);
-}
+void InitializeRootDirectory() { CreateDefaultDirectory(); }
 
 void ListDirectory(const char *pathPtr) {
-  AssertDirConfigs(DiskPtr, pathPtr);
+  AssertDirConfigs(pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, ListDirTravelMatchConditionCb);
+      TravelToDirFromPathName(pathPtr, ListDirTravelMatchConditionCb);
 
-  ReadDirectoryDataItem(DiskPtr, dirInode);
+  ReadDirectoryDataItem(dirInode);
 }
 
 void MakeDirectory(const char *pathPtr) {
-  AssertDirConfigs(DiskPtr, pathPtr);
+  AssertDirConfigs(pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, MakeDirTravelMatchConditionCb);
+      TravelToDirFromPathName(pathPtr, MakeDirTravelMatchConditionCb);
   const char *lastPartStr = PathNameEndPart(pathPtr);
 
-  Inode *newDir = CreateDefaultDirectory(DiskPtr);
+  Inode *newDir = CreateDefaultDirectory();
   LinkParentDirWithChildDir(newDir, dirInode, lastPartStr);
   LinkChildDirWithParentDir(newDir, dirInode);
 }
 
 void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir,
                                const char *path) {
-  uint32_t childDirInodeBlockIdx = FindInodeBlockIdx(DiskPtr, childDir);
-  WriteNewDirectoryDataItem(DiskPtr, parentDir, childDirInodeBlockIdx, path);
+  uint32_t childDirInodeBlockIdx = FindInodeBlockIdx(childDir);
+  WriteNewDirectoryDataItem(parentDir, childDirInodeBlockIdx, path);
 }
 
 void LinkChildDirWithParentDir(Inode *childDir, Inode *parentDir) {
-  uint32_t childDirInodeBlockIdx = FindInodeBlockIdx(DiskPtr, parentDir);
-  WriteNewDirectoryDataItem(DiskPtr, childDir, childDirInodeBlockIdx, "..");
+  uint32_t childDirInodeBlockIdx = FindInodeBlockIdx(parentDir);
+  WriteNewDirectoryDataItem(childDir, childDirInodeBlockIdx, "..");
 }
 
-Inode *CreateDefaultDirectory(void *disk) {
-  InodeBitMap *iBitMap = FindInodeBitMap(disk);
+Inode *CreateDefaultDirectory() {
+  InodeBitMap *iBitMap = FindInodeBitMap();
   uint32_t firstFreeInodeBlockIdx = FindFirstFreeInodeIdx(iBitMap);
 
-  DataBitMap *dBitMap = FindDataBitMap(disk);
+  DataBitMap *dBitMap = FindDataBitMap();
   uint32_t firstFreeDataIdx = FindFirstFreeDataIdx(dBitMap);
 
-  Inode *inode =
-      createDirectoryInode(disk, firstFreeInodeBlockIdx, firstFreeDataIdx);
+  Inode *inode = createDirectoryInode(firstFreeInodeBlockIdx, firstFreeDataIdx);
   uint32_t dataIdx =
-      WriteNewDirectoryDataItem(disk, inode, firstFreeInodeBlockIdx, ".");
+      WriteNewDirectoryDataItem(inode, firstFreeInodeBlockIdx, ".");
   return inode;
 }
 
-Inode *createDirectoryInode(void *disk, uint32_t iBlockIdx,
-                            uint32_t dataRegionIdx) {
-  Inode *inode = FindFirstInode(disk);
+Inode *createDirectoryInode(uint32_t iBlockIdx, uint32_t dataRegionIdx) {
+  Inode *inode = FindFirstInode();
   Inode *dirInode = inode + iBlockIdx;
 
   dirInode->Mode = MODE_DIRECTORY;
@@ -126,7 +121,7 @@ Inode *createDirectoryInode(void *disk, uint32_t iBlockIdx,
   dirInode->Dir = 0;
   dirInode->Generation = GENERATION_GENERIC;
 
-  UpdateSuperBlockInodeOnly(disk, iBlockIdx, dataRegionIdx);
+  UpdateSuperBlockInodeOnly(iBlockIdx, dataRegionIdx);
   return dirInode;
 }
 
@@ -150,16 +145,16 @@ void DumpAnyDirectory(Inode *rootDirInode) {
   LOG_INFO("Root Dir: Dir:                        %u", rootDirInode->Dir);
   LOG_INFO("Root Dir: Generation:                 %u",
            rootDirInode->Generation);
-  ReadDirectoryDataItem(DiskPtr, rootDirInode);
+  ReadDirectoryDataItem(rootDirInode);
   LOG_INFO("---------- DUMPING META INFO FROM ANY DIR ENDED ------------");
 }
 
-void DumpRootDirectory(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
+void DumpRootDirectory() {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   uint32_t rootDirIdx = superBlock->DataBitmapStartPtr + 1;
-  Inode *rootDirInode = disk + (rootDirIdx * BLOCK_SIZE_BYTES);
+  Inode *rootDirInode = DiskPtr + (rootDirIdx * BLOCK_SIZE_BYTES);
   LOG_INFO("---------- DUMPING META INFO FROM ROOT DIR STARTED ------------");
-  LOG_INFO("Disk: Pointer:                        %p", disk);
+  LOG_INFO("DiskPtr: Pointer:                        %p", DiskPtr);
   LOG_INFO("Root Dir: Pointer:                    %p", rootDirInode);
   LOG_INFO("Root Dir: Mode:                       %u", rootDirInode->Mode);
   LOG_INFO("Root Dir: Uid:                        %u", rootDirInode->Uid);
@@ -179,7 +174,7 @@ void DumpRootDirectory(void *disk) {
   LOG_INFO("Root Dir: Generation:                 %u",
            rootDirInode->Generation);
   DirectoryDataItem *dataItem =
-      disk + (rootDirInode->InodeBlock.DirectPtr[0] * BLOCK_SIZE_BYTES);
+      DiskPtr + (rootDirInode->InodeBlock.DirectPtr[0] * BLOCK_SIZE_BYTES);
   LOG_INFO("Root Dir: Inode Block 0: INode Num:   %u", dataItem->INum);
   LOG_INFO("Root Dir: Inode Block 0: Rec Leng:    %u", dataItem->RecLen);
   LOG_INFO("Root Dir: Inode Block 0: Str Leng:    %u", dataItem->StrLen);

@@ -10,7 +10,7 @@
 typedef char Disk[DISK_SIZE_BYTES];
 
 void *InitializeDisk();
-void DumpDisk(void *disk);
+void DumpDisk();
 
 #endif // !DISK_H
 #define DISK_H

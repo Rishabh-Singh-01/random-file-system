@@ -21,16 +21,15 @@ struct DirectoryDataItem {
 
 typedef struct DirectoryDataItem DirectoryDataItem;
 
-uint32_t WriteNewDirectoryDataItem(void *disk, Inode *curDir,
-                                   uint32_t inodeBlockIdx, const char *path);
-DirectoryDataItem *FindNthDataRegion(void *disk, uint32_t dataRegionIdx);
-void WriteCurrentDirectoryItemData(void *disk, uint32_t dataRegionIdx,
-                                   uint32_t iNodeIdx);
-DataBitMap *FindDataBitMap(void *disk);
+uint32_t WriteNewDirectoryDataItem(Inode *curDir, uint32_t inodeBlockIdx,
+                                   const char *path);
+DirectoryDataItem *FindNthDataRegion(uint32_t dataRegionIdx);
+void WriteCurrentDirectoryItemData(uint32_t dataRegionIdx, uint32_t iNodeIdx);
+DataBitMap *FindDataBitMap();
 uint32_t FindFirstFreeDataIdx(DataBitMap *dBitMap);
-void ReadDirectoryDataItem(void *disk, Inode *curDir);
-uint32_t UpdateDirectoryDataItem(void *disk, Inode *curDir, uint32_t curDataIdx,
+void ReadDirectoryDataItem(Inode *curDir);
+uint32_t UpdateDirectoryDataItem(Inode *curDir, uint32_t curDataIdx,
                                  uint32_t inodeBlockIdx, char *path);
-void UpdateDataBitMapNthNodeToOccupied(void *disk, uint32_t bitToSetFromMSB);
+void UpdateDataBitMapNthNodeToOccupied(uint32_t bitToSetFromMSB);
 
 #endif // !DATA_H

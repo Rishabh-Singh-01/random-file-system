@@ -58,12 +58,12 @@ struct Inode {
 };
 typedef struct Inode Inode;
 
-uint32_t FindInodeBlockIdx(void *disk, Inode *inode);
-Inode *FindNthInode(void *disk, uint32_t iBlockIdx);
-Inode *FindFirstInode(void *disk);
-InodeBitMap *InitializeInodeBitMap(void *disk);
-InodeBitMap *FindInodeBitMap(void *disk);
+uint32_t FindInodeBlockIdx(Inode *inode);
+Inode *FindNthInode(uint32_t iBlockIdx);
+Inode *FindFirstInode();
+InodeBitMap *InitializeInodeBitMap();
+InodeBitMap *FindInodeBitMap();
 uint32_t FindFirstFreeInodeIdx(InodeBitMap *iBitMap);
-void UpdateInodeBitMapNthNodeToOccupied(void *disk, uint32_t bitToSetFromMSB);
+void UpdateInodeBitMapNthNodeToOccupied(uint32_t bitToSetFromMSB);
 
 #endif // !INODE_H

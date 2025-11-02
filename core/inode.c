@@ -1,4 +1,5 @@
 #include "inode.h"
+#include "common.h"
 #include "disk.h"
 #include "stdlib.h"
 #include "superblock.h"
@@ -6,36 +7,36 @@
 #include <limits.h>
 #include <stdint.h>
 
-InodeBitMap *InitializeInodeBitMap(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
+InodeBitMap *InitializeInodeBitMap() {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   uint32_t iBitMapIdx = superBlock->InodeBitmapStartPtr;
-  InodeBitMap *iBitMap = disk + (iBitMapIdx * BLOCK_SIZE_BYTES);
+  InodeBitMap *iBitMap = DiskPtr + (iBitMapIdx * BLOCK_SIZE_BYTES);
   iBitMap->Count = INODE_COUNT;
   iBitMap->Map = 0;
   return iBitMap;
 }
 
-uint32_t FindInodeBlockIdx(void *disk, Inode *inode) {
-  Inode *rootDirInode = FindFirstInode(disk);
+uint32_t FindInodeBlockIdx(Inode *inode) {
+  Inode *rootDirInode = FindFirstInode();
   return inode - rootDirInode;
 }
 
-Inode *FindFirstInode(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
-  return disk + (superBlock->InodeTableStartPtr * BLOCK_SIZE_BYTES);
+Inode *FindFirstInode() {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
+  return DiskPtr + (superBlock->InodeTableStartPtr * BLOCK_SIZE_BYTES);
 }
 
-Inode *FindNthInode(void *disk, uint32_t iBlockIdx) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
+Inode *FindNthInode(uint32_t iBlockIdx) {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   Inode *rootDirInode =
-      disk + (superBlock->InodeTableStartPtr * BLOCK_SIZE_BYTES);
+      DiskPtr + (superBlock->InodeTableStartPtr * BLOCK_SIZE_BYTES);
   return rootDirInode + iBlockIdx;
 }
 
-InodeBitMap *FindInodeBitMap(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
+InodeBitMap *FindInodeBitMap() {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   uint32_t iBitMapIdx = superBlock->InodeBitmapStartPtr;
-  InodeBitMap *iBitMap = disk + (iBitMapIdx * BLOCK_SIZE_BYTES);
+  InodeBitMap *iBitMap = DiskPtr + (iBitMapIdx * BLOCK_SIZE_BYTES);
   return iBitMap;
 }
 

@@ -9,27 +9,27 @@
 #include <stdint.h>
 #include <string.h>
 
-void readDirDataItem(void *disk, Inode *curDir, uint32_t dataRegionIdx) {
-  DirectoryDataItem *item = FindNthDataRegion(disk, dataRegionIdx);
+void readDirDataItem(Inode *curDir, uint32_t dataRegionIdx) {
+  DirectoryDataItem *item = FindNthDataRegion(dataRegionIdx);
   while (item->RecLen == PATH_NAME_MAX_LENGTH) {
     LOG_INFO(
         "Here is the info for data items: \n> Parent Inode Idx: %d,\n> Child "
         "Data Region Idx: %d,\n> Child Inode Idx: "
         "%d,\n> Child Rec Len: %d,\n> Child Str Len: %d,\n> Child Str Name: %s",
-        FindInodeBlockIdx(disk, curDir), dataRegionIdx, item->INum,
-        item->RecLen, item->StrLen, item->Str);
+        FindInodeBlockIdx(curDir), dataRegionIdx, item->INum, item->RecLen,
+        item->StrLen, item->Str);
     item++;
   }
 }
 
-void ReadDirectoryDataItem(void *disk, Inode *curDir) {
-  ExecuteCbOnInodeValidDirectPtrs(disk, curDir, readDirDataItem);
+void ReadDirectoryDataItem(Inode *curDir) {
+  ExecuteCbOnInodeValidDirectPtrs(curDir, readDirDataItem);
 }
 
-uint32_t WriteNewDirectoryDataItem(void *disk, Inode *curDir,
-                                   uint32_t inodeBlockIdx, const char *path) {
+uint32_t WriteNewDirectoryDataItem(Inode *curDir, uint32_t inodeBlockIdx,
+                                   const char *path) {
   uint32_t dataIdx = curDir->InodeBlock.DirectPtr[0];
-  DirectoryDataItem *data = FindNthDataRegion(disk, dataIdx);
+  DirectoryDataItem *data = FindNthDataRegion(dataIdx);
   while (data->RecLen == PATH_NAME_MAX_LENGTH) {
     data++;
   }
@@ -37,20 +37,19 @@ uint32_t WriteNewDirectoryDataItem(void *disk, Inode *curDir,
   data->RecLen = PATH_NAME_MAX_LENGTH;
   data->StrLen = strlen(path);
   strcpy(data->Str, path);
-  UpdateSuperBlockDataOnly(disk, dataIdx);
+  UpdateSuperBlockDataOnly(dataIdx);
   return dataIdx;
 }
 
-DirectoryDataItem *FindNthDataRegion(void *disk, uint32_t dataRegionIdx) {
+DirectoryDataItem *FindNthDataRegion(uint32_t dataRegionIdx) {
   assert(dataRegionIdx >= 8);
-  SuperBlock *superBlock = (SuperBlock *)disk;
-  return disk + (dataRegionIdx * BLOCK_SIZE_BYTES);
+  return DiskPtr + (dataRegionIdx * BLOCK_SIZE_BYTES);
 }
 
-DataBitMap *FindDataBitMap(void *disk) {
-  SuperBlock *superBlock = (SuperBlock *)disk;
+DataBitMap *FindDataBitMap() {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
   uint32_t dBitMapIdx = superBlock->DataBitmapStartPtr;
-  DataBitMap *dBitMap = disk + (dBitMapIdx * BLOCK_SIZE_BYTES);
+  DataBitMap *dBitMap = DiskPtr + (dBitMapIdx * BLOCK_SIZE_BYTES);
   return dBitMap;
 }
 
