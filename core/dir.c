@@ -15,9 +15,7 @@
 #include "inode.h"
 #include "superblock.h"
 
-void *DiskPtr;
-
-Inode *makeDirTravelMatchConditionCb(const char *splitedStr,
+Inode *MakeDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode) {
   if (splitedStr == NULL) {
@@ -30,7 +28,7 @@ Inode *makeDirTravelMatchConditionCb(const char *splitedStr,
   return FindNthInode(DiskPtr, matchedInodeBlockIdx);
 }
 
-Inode *listDirTravelMatchConditionCb(const char *splitedStr,
+Inode *ListDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode) {
   assert(matchedInodeBlockIdx != -1 && "Required Directory does not exists");
@@ -60,7 +58,7 @@ void ListDirectory(const char *pathPtr) {
   AssertDirConfigs(DiskPtr, pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, listDirTravelMatchConditionCb);
+      TravelToDirFromPathName(DiskPtr, pathPtr, ListDirTravelMatchConditionCb);
 
   ReadDirectoryDataItem(DiskPtr, dirInode);
 }
@@ -69,7 +67,7 @@ void MakeDirectory(const char *pathPtr) {
   AssertDirConfigs(DiskPtr, pathPtr);
 
   Inode *dirInode =
-      TravelToDirFromPathName(DiskPtr, pathPtr, makeDirTravelMatchConditionCb);
+      TravelToDirFromPathName(DiskPtr, pathPtr, MakeDirTravelMatchConditionCb);
   const char *lastPartStr = PathNameEndPart(pathPtr);
 
   Inode *newDir = CreateDefaultDirectory(DiskPtr);

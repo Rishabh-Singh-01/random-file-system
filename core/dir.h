@@ -8,6 +8,14 @@
 #define PATH_NAME_DELIMITER "/"
 void DumpRootDirectory(void *disk);
 
+Inode *MakeDirTravelMatchConditionCb(const char *splitedStr,
+                                     uint32_t matchedInodeBlockIdx,
+                                     Inode *dirInode);
+
+Inode *ListDirTravelMatchConditionCb(const char *splitedStr,
+                                     uint32_t matchedInodeBlockIdx,
+                                     Inode *dirInode);
+
 uint32_t findDirInodeWithValidName(const char *path, Inode *dirNode);
 void MakeDirectory(const char *pathPtr);
 Inode *CreateDefaultDirectory(void *disk);

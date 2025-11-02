@@ -3,6 +3,8 @@
 
 #include "inode.h"
 #include <stdint.h>
+
+extern void *DiskPtr;
 typedef void (*CbInodeValidDirectPtrs)(void *disk, Inode *curDir,
                                        uint32_t dataRegionIdx);
 
@@ -21,6 +23,7 @@ typedef Inode *(*CbTravelToDirMatchCondition)(const char *splitedStr,
 Inode *TravelToDirFromPathName(void *disk, const char *pathPtr,
                                CbTravelToDirMatchCondition);
 
+void AssertFileConfigs(void *disk, const char *path);
 void AssertDirConfigs(void *disk, const char *path);
 const char *PathNameEndPart(const char *pathPtr);
 

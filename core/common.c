@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+void *DiskPtr;
+
 void ExecuteCbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
                                      CbInodeValidDirectPtrs cb) {
   uint8_t i = 0;
@@ -28,6 +30,14 @@ uint32_t ExecuteInt32CbOnInodeValidDirectPtrs(void *disk, Inode *curDir,
     i++;
   }
   return -1;
+}
+
+void AssertFileConfigs(void *disk, const char *path) {
+  assert(disk != NULL && "Root Directory MetaData Not found");
+  assert(strlen(path) <= PATH_NAME_MAX_LENGTH &&
+         "Path name should be less than 255 chars");
+  assert(*path == '/' &&
+         "Directory Path Should always start with root directory");
 }
 
 void AssertDirConfigs(void *disk, const char *path) {
