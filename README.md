@@ -1,6 +1,6 @@
-# fs-prototype: Custom File System Implementation
+# random-file-system: Custom File System Implementation
 
-This project is a **custom file system prototype** designed exclusively for **educational purposes** to illustrate fundamental file system and I/O concepts in C.
+This project is a **custom file system prototype** (software version) designed exclusively for **educational purposes** to illustrate fundamental file system and I/O concepts in C.
 
 **WARNING: This is a toy implementation and is not intended for use in any production-level or serious application.**
 
@@ -13,8 +13,8 @@ This section assumes you have the necessary source files and a `Makefile` config
 1.  **Clone the Repository:**
 
     ```bash
-    git clone [YOUR_REPOSITORY_URL]
-    cd fs-prototype
+    git clone https://github.com/Rishabh-Singh-01/random-file-system.git
+    cd random-file-system
     ```
 
 2.  **Compile and Run the Project:**
@@ -41,6 +41,13 @@ This section assumes you have the necessary source files and a `Makefile` config
 
 As a non-production prototype, this implementation has significant functional limitations:
 
+  * **No REPL Provided:**
+      * Currently no REPL is provided to directly run File System.
+      * REPL Feature intended to be completed in future, added to backlog.
+  * **No Long Term Persistence:**
+      * Persistence is only provided for individual session only.
+      * Likely to be completed by **introducing Disk Emulator**.
+      * Long Term Persistence support intended to be completed in future, added to backlog.
   * **Path Requirements:**
       * The path must always **start with the root** (i.e., `/`).
       * Path names are limited to **smaller than 255 characters**.
@@ -71,13 +78,14 @@ The following features are prioritized for future development:
   * Add the feature to **append data to a file** (instead of only force-overriding the content).
   * **Remove all compiler warnings**.
   * **Refactor the code** to be more modular and improve overall structure.
+  * Add more sophisticated **directory/file differentiators/customization** for better output messages.
 
 ### P2 (Future Enhancements)
 
   * Add a **basic REPL (Read-Eval-Print Loop)** to interact with the file system.
-  * Add more sophisticated **directory/file differentiators/customization**.
   * Implement real use-case logic for **Permission** and other basic metadata.
-  * Add logic to **save/flush the File System state** to a real disk or persistent file. This will also require a saved-state re-initializer.
+  * Introduce a **Disk Emulator** to provide persistence and "hardware level" interaction to the file system.
+  * Add logic to **save/flush the File System state** to a real disk or persistent file (or **disk emulator**). This will also require a saved-state re-initializer.
 
 -----
 
