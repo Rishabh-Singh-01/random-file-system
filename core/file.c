@@ -5,6 +5,7 @@
 #include "dir.h"
 #include "inode.h"
 #include "superblock.h"
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -76,6 +77,15 @@ void writeDataToFileOnly(Inode *dirInode, const char *fileData) {
 }
 
 // TODO: for now assuming that the file will fit in 4KB
+void resetDataToFileOnly(Inode *dirInode) {
+  uint32_t dataRegionIdx = dirInode->InodeBlock.DirectPtr[0];
+  // TODO: prev made this method always return DataDirectoryRegion, should have
+  // been void *, then caller fn will convert itself
+  void *dataRegion = (void *)FindNthDataRegion(dataRegionIdx);
+  memset(dataRegion, 0, BLOCK_SIZE_BYTES);
+}
+
+// TODO: for now assuming that the file will fit in 4KB
 void readDataFromFile(Inode *dirInode) {
   uint32_t dataRegionIdx = dirInode->InodeBlock.DirectPtr[0];
   // TODO: prev made this method always return DataDirectoryRegion, should have
@@ -100,4 +110,33 @@ void ReadFile(const char *pathPtr) {
       TravelToDirFromPathName(pathPtr, ListDirTravelMatchConditionCb);
 
   readDataFromFile(dirInode);
+}
+
+Inode *listFileTravelMatchConditionCb(const char *splitedStr,
+                                      uint32_t matchedInodeBlockIdx,
+                                      Inode *dirInode) {
+  assert(matchedInodeBlockIdx != -1 && "Required File does not exists");
+  if (splitedStr == NULL) {
+    return dirInode;
+  }
+  return FindNthInode(matchedInodeBlockIdx);
+}
+
+void RemoveFile(const char *pathPtr) {
+  AssertDirConfigs(pathPtr);
+
+  Inode *dirInode =
+      TravelToDirFromPathName(pathPtr, listFileTravelMatchConditionCb);
+  LOG_DEBUG("Inside current Directory Inode: %d", FindInodeBlockIdx(dirInode));
+  const char *lastPartStr = PathNameEndPart(pathPtr);
+  LOG_DEBUG("last part str: %s", lastPartStr);
+
+  Inode *fileInode =
+      TravelToDirFromPathName(pathPtr, ListDirTravelMatchConditionCb);
+  resetDataToFileOnly(fileInode);
+
+  // TODO: purposely using the fact that the only first direct ptr will contain
+  // the details
+  uint32_t parentRegion = dirInode->InodeBlock.DirectPtr[0];
+  SelectAndResetDirDataItem(dirInode, parentRegion, lastPartStr);
 }

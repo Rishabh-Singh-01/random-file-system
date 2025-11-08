@@ -13,10 +13,11 @@ int main() {
   MakeDirectory("/hello1");
   MakeDirectory("/hello2");
   MakeDirectory("/hello2/hello3");
-  ListDirectory("/hello2/hello3/../.././hello2");
-  CreateFile("/hello2/hello3/../.././hello2/yo.txt");
-  WriteToFile("/hello2/yo.txt", "Hi there 2");
-  ReadFile("/hello2/yo.txt");
-  ListDirectory("/.");
+  MakeDirectory("/hello2/hello4");
+  RemoveDirectory("/hello2/hello3");
+  CreateFile("/hello2/yo.txt");
+  CreateFile("/hello2/yo2.txt");
+  RemoveFile("/hello2/yo2.txt");
+  ListDirectory("/hello2");
   return 0;
 }

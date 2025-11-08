@@ -1,4 +1,6 @@
 #include "common.h"
+#include "./../utils/logger.h"
+#include "data.h"
 #include "dir.h"
 #include "inode.h"
 #include <assert.h>

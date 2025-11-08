@@ -20,6 +20,7 @@ struct DirectoryDataItem {
 };
 
 typedef struct DirectoryDataItem DirectoryDataItem;
+uint32_t FindDataRegionIdx(DirectoryDataItem *dataRegion);
 
 uint32_t WriteNewDirectoryDataItem(Inode *curDir, uint32_t inodeBlockIdx,
                                    const char *path);

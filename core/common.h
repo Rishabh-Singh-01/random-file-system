@@ -23,5 +23,4 @@ Inode *TravelToDirFromPathName(const char *pathPtr,
 void AssertFileConfigs(const char *path);
 void AssertDirConfigs(const char *path);
 const char *PathNameEndPart(const char *pathPtr);
-
-#endif // !COMMON_H
+#endif // !COMMON_Hk

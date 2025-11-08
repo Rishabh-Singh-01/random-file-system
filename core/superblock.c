@@ -47,3 +47,16 @@ SuperBlock *UpdateSuperBlockDataOnly(uint32_t dataBlockIdx) {
 
   return superBlock;
 }
+
+SuperBlock *UpdateSuperBlockDataOnlyToMarkFree(uint32_t dataBlockIdx) {
+  SuperBlock *superBlock = (SuperBlock *)DiskPtr;
+
+  superBlock->FreeBlocksCount++;
+  DataBitMap *dataTablePtr =
+      DiskPtr + (superBlock->DataBitmapStartPtr * BLOCK_SIZE_BYTES);
+  uint64_t dataMap = dataTablePtr->Map;
+  uint64_t dataMapMask = 1l << (63 - (dataBlockIdx - 8));
+  dataTablePtr->Map = dataMap & ~dataMapMask;
+
+  return superBlock;
+}

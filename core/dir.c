@@ -15,6 +15,19 @@
 #include "inode.h"
 #include "superblock.h"
 
+Inode *FindImmediateParent(Inode *childDir) {
+  uint32_t dirRegion = childDir->InodeBlock.DirectPtr[0];
+  DirectoryDataItem *item = FindNthDataRegion(dirRegion);
+  while (item->RecLen == PATH_NAME_MAX_LENGTH) {
+    if (strcmp(item->Str, "..") == 0) {
+      return FindNthInode(item->INum);
+    }
+    item++;
+  }
+  assert(1 == 2 && "Should find the immediate parent");
+  return NULL;
+}
+
 Inode *MakeDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode) {
@@ -73,6 +86,74 @@ void MakeDirectory(const char *pathPtr) {
   Inode *newDir = CreateDefaultDirectory();
   LinkParentDirWithChildDir(newDir, dirInode, lastPartStr);
   LinkChildDirWithParentDir(newDir, dirInode);
+}
+
+void resetDirDataItem(DirectoryDataItem *item) {
+  item->INum = 0;
+  item->RecLen = 0;
+  item->StrLen = 0;
+  memset(item->Str, 0, sizeof(item->Str));
+}
+
+void removeDirDataItem(Inode *curDir, uint32_t dataRegionIdx) {
+  DirectoryDataItem *item = FindNthDataRegion(dataRegionIdx);
+  while (item->RecLen == PATH_NAME_MAX_LENGTH) {
+    if (strcmp(item->Str, ".") == 0) {
+      resetDirDataItem(item);
+      item++;
+      continue;
+    }
+    if (strcmp(item->Str, "..") == 0) {
+      resetDirDataItem(item);
+      item++;
+      continue;
+    }
+
+    Inode *newInode = FindNthInode(item->INum);
+    RemoveAllChildDir(newInode);
+    resetDirDataItem(item);
+    item++;
+  }
+  // Update super block to regiter dir being free now
+  // TODO: -> start from here
+  UpdateSuperBlockDataOnlyToMarkFree(FindDataRegionIdx(item));
+}
+
+void RemoveAllChildDir(Inode *curDir) {
+  ExecuteCbOnInodeValidDirectPtrs(curDir, removeDirDataItem);
+
+  uint8_t i = 0;
+  while (i < MAX_DIRECT_DATA_REGION_LINK_COUNT &&
+         curDir->InodeBlock.DirectPtr[i] != 0) {
+    curDir->InodeBlock.DirectPtr[i] = 0;
+    i++;
+  }
+}
+
+void SelectAndResetDirDataItem(Inode *curDir, uint32_t dataRegionIdx,
+                               const char *dirPathToReset) {
+  DirectoryDataItem *item = FindNthDataRegion(dataRegionIdx);
+  while (item->RecLen == PATH_NAME_MAX_LENGTH) {
+    if (strcmp(item->Str, dirPathToReset) == 0) {
+      resetDirDataItem(item);
+      return;
+    }
+    item++;
+  }
+}
+
+void RemoveDirectory(const char *pathPtr) {
+  AssertDirConfigs(pathPtr);
+
+  Inode *dirInode =
+      TravelToDirFromPathName(pathPtr, ListDirTravelMatchConditionCb);
+  const char *lastPartStr = PathNameEndPart(pathPtr);
+
+  Inode *parentDir = FindImmediateParent(dirInode);
+  uint32_t parentRegion = parentDir->InodeBlock.DirectPtr[0];
+  SelectAndResetDirDataItem(parentDir, parentRegion, lastPartStr);
+
+  RemoveAllChildDir(dirInode);
 }
 
 void LinkParentDirWithChildDir(Inode *childDir, Inode *parentDir,

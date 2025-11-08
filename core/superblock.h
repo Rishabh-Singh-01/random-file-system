@@ -22,5 +22,6 @@ SuperBlock *InitializeSuperBlock();
 SuperBlock *UpdateSuperBlockInodeOnly(uint32_t iBlockIdx,
                                       uint32_t dataBlockIdx);
 SuperBlock *UpdateSuperBlockDataOnly(uint32_t dataBlockIdx);
+SuperBlock *UpdateSuperBlockDataOnlyToMarkFree(uint32_t dataBlockIdx);
 
 #endif // !SUPERBLOCK_H

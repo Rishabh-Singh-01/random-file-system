@@ -8,6 +8,10 @@
 #define PATH_NAME_DELIMITER "/"
 void DumpRootDirectory();
 
+Inode *FindImmediateParent(Inode *childDir);
+void SelectAndResetDirDataItem(Inode *curDir, uint32_t dataRegionIdx,
+                               const char *dirPathToReset);
+void RemoveAllChildDir(Inode *curDir);
 Inode *MakeDirTravelMatchConditionCb(const char *splitedStr,
                                      uint32_t matchedInodeBlockIdx,
                                      Inode *dirInode);

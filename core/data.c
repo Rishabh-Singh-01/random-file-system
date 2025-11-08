@@ -1,6 +1,7 @@
 #include "data.h"
 #include "./../utils/logger.h"
 #include "common.c"
+#include "common.h"
 #include "dir.h"
 #include "inode.h"
 #include "superblock.h"
@@ -39,6 +40,13 @@ uint32_t WriteNewDirectoryDataItem(Inode *curDir, uint32_t inodeBlockIdx,
   strcpy(data->Str, path);
   UpdateSuperBlockDataOnly(dataIdx);
   return dataIdx;
+}
+
+uint32_t FindDataRegionIdx(DirectoryDataItem *dataRegion) {
+  uint32_t dataRegionIdx = ((void *)dataRegion - DiskPtr) / (BLOCK_SIZE_BYTES);
+  assert(dataRegionIdx >= 8 &&
+         "Provided Data Region Item Index should be greater than 8");
+  return dataRegionIdx;
 }
 
 DirectoryDataItem *FindNthDataRegion(uint32_t dataRegionIdx) {

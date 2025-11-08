@@ -29,9 +29,11 @@ This section assumes you have the necessary source files and a `Makefile` config
 
       * **Directory Creation:** `void MakeDirectory(const char *pathPtr);`
       * **List Directory:** `void ListDirectory(const char *pathPtr);`
+      * **Remove Directory:** `void RemoveDirectory(const char *pathPtr);`
       * **File Creation:** `void CreateFile(const char *pathPtr);`
       * **Write To File:** `void WriteToFile(const char *pathPtr, const char *fileData);`
       * **Read File:** `void ReadFile(const char *pathPtr);`
+      * **Remove File:** `void RemoveFile(const char *pathPtr);`
 
 -----
 
@@ -57,7 +59,6 @@ The following features are prioritized for future development:
 
 ### P0 (Critical - Immediate Focus)
 
-  * Implement the feature to **remove/delete directories and files**.
   * Implement support for **file sizes greater than 4KB** (likely by implementing indirect references).
   * Correctly update critical metadata in the **Inode** for both directories and files:
       * `sizes` (size of the current object).
